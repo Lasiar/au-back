@@ -70,8 +70,13 @@ func (a *Auth) HasPerm(user *User, code string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if (user.PermMask & perm.Mask) != perm.Mask {
+	if perm.ID > user.PermID {
 		return false, nil
 	}
 	return true, nil
+}
+
+// GetPermissions возвращает список прав доступа
+func (a *Auth) GetPermissions() ([]*Permission, error) {
+	return a.db.selectPermissions()
 }

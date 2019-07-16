@@ -11,6 +11,7 @@ type User struct {
 	Login  string
 	Pass   string
 	PermID int
+	Roles  []string
 	Name   sql.NullString
 }
 
@@ -102,4 +103,9 @@ func (db *database) selectUserByLogin(login string) (*User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+// GetUsers возврашает всех пользователей
+func (a *Auth) GetUsers() ([]*User, error) {
+	return a.db.selectUsers()
 }

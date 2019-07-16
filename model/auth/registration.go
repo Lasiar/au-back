@@ -23,5 +23,5 @@ func (a *Auth) ChangeUser(user *User) (int, error) {
 // AddUser Регистрация пользователя
 func (a *Auth) AddUser(user *User) (int, error) {
 	user.ID = -1
-	return a.ChangeUser(a)
+	return a.ChangeUser(user)
 }
