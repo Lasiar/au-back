@@ -23,6 +23,8 @@ func JSONWrite(next http.Handler) http.Handler {
 		if err := r.Context().Err(); err != nil {
 			log.Println(err)
 			switch {
+			case web.IsBadRequest(err):
+				http.Error(w, err.Error(), http.StatusBadRequest)
 			case err == sql.ErrNoRows:
 				http.Error(w, "Нет данных по данному запросы", http.StatusNotFound)
 			default:
@@ -63,7 +65,7 @@ func CORS(method string, next http.Handler) http.Handler {
 func Permission(permName string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if ok, err := web.HasPerm(r, permName); err != nil || !ok {
-			context.SetError(r, errors.New("forrbiden"))
+			context.SetError(r, errors.New("forbidden"))
 			return
 		}
 

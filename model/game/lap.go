@@ -1,17 +1,19 @@
 package game
 
-import "time"
+import (
+	"time"
+)
 
 // Round структура для отображения роундов (попытки)
 type Lap struct {
-	IDSession int
-	DT        time.Time
-	Input     string
+	IDSession int       `json:"id_session"`
+	DT        time.Time `json:"date_time"`
+	Input     string    `json:"input"`
 }
 
 func (db *database) selectLapsBySessionID(id int) ([]*Lap, error) {
 	laps := make([]*Lap, 0)
-	rows, err := db.db.Query("SELECT id_session, dt, input FROM game.lap  where id_session = $1", id)
+	rows, err := db.db.Query("SELECT id_session, dt, input FROM game.lap  WHERE id_session = $1 ORDER BY  dt", id)
 	if err != nil {
 		return nil, err
 	}
@@ -28,10 +30,11 @@ func (db *database) selectLapsBySessionID(id int) ([]*Lap, error) {
 	return laps, nil
 }
 
-func (db *database) insertLap(idSession int, input string) error {
-	_, err := db.db.Exec("INSERT INTO game.lap (id_session, input) VALUES ($1, $2)",
+func (db *database) insertLap(idSession int, input string) (*Lap, error) {
+	lap := &Lap{IDSession: idSession, Input: input}
+	err := db.db.QueryRow("INSERT INTO game.lap (id_session, input) VALUES ($1, $2) RETURNING dt",
 		idSession,
 		input,
-	)
-	return err
+	).Scan(&lap.DT)
+	return lap, err
 }

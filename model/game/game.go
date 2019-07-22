@@ -1,7 +1,6 @@
 package game
 
 import (
-	"bytes"
 	"math/rand"
 	"strings"
 	"sync"
@@ -16,12 +15,6 @@ var (
 	_once    sync.Once
 	_game    = new(Game)
 	integers = "0123456789"
-)
-
-const (
-	contains = "K"
-	notFound = "_"
-	right    = "В"
 )
 
 // GetAuth возвращает текущий объект авторизации
@@ -46,38 +39,38 @@ func generateSecret(length int) (string, error) {
 	return secret.String(), nil
 }
 
-func (g *Game) CreateSession(idUser, length int) error {
+func (g *Game) CreateSession(idUser, length int) (*Session, error) {
 	secret, err := generateSecret(length)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	return g.db.insertSession(idUser, secret)
 }
 
-func (g *Game) GetSessions(idUser int) ([]*Session, error) {
-	return g.db.selectSessionsByUserID(idUser)
+func (g *Game) GetSessions(idUser int, completed bool) ([]*Session, error) {
+	return g.db.selectSessions(idUser, completed)
 }
 
-func (g *Game) Guess(idSession int, guess string) (string, bool, error) {
+func (g *Game) Guess(idSession int, guess string) (*Lap, bool, error) {
 	session, err := g.db.selectSessionByID(idSession)
 	if err != nil {
-		return "", false, err
+		return nil, false, err
 	}
-	buf := new(bytes.Buffer)
-	for i, char := range guess {
-		if byte(char) == session.Secret[i] {
-			buf.WriteString(right)
-			continue
-		}
-		if strings.Contains(session.Secret, string(char)) {
-			buf.WriteString(contains)
-		} else {
-			buf.WriteString(notFound)
-		}
+	lap, err := g.db.insertLap(idSession, guess)
+	if err != nil {
+		return nil, false, err
 	}
-	return buf.String(), session.Secret == guess, nil
+	return lap, session.Secret == guess, nil
+}
+
+func (g *Game) GetLapsSorted(id int) ([]*Lap, error) {
+	return g.db.selectLapsBySessionID(id)
 }
 
 func (g *Game) GetSession(id int) (*Session, error) {
 	return g.db.selectSessionByID(id)
+}
+
+func (g *Game) GetLeaderboards() ([]*Leaderboard, error) {
+	return g.db.selectLeaderboard()
 }

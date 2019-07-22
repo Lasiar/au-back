@@ -37,6 +37,7 @@ func GetUser(r *http.Request) (*auth.User, error) {
 		return nil, err
 	}
 	*r = *r.WithContext(context.WithValue(r.Context(), "user", user))
+	*r = *r.WithContext(context.WithValue(r.Context(), "user", user))
 	return user, nil
 }
 
@@ -54,9 +55,7 @@ func HasPerm(r *http.Request, code string) (bool, error) {
 
 // ParseJSON читает из тела запроса переданную структуру
 func ParseJSON(r *http.Request, data interface{}) error {
-	dec := json.NewDecoder(r.Body)
-	err := dec.Decode(&data)
-	return err
+	return json.NewDecoder(r.Body).Decode(data)
 }
 
 // SetToken устанавливает токен в веб запрос

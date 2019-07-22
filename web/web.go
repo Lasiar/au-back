@@ -21,15 +21,17 @@ func Run() {
 	apiMux.Handle("/api/user/permissions", user.GetPermissions())
 	apiMux.Handle("/api/user/logout", user.Logout())
 	apiMux.Handle("/api/users", middleware.Permission("admin_full", user.GetUsers()))
-	apiMux.Handle("/api/user", user.GetUser())
-	apiMux.Handle("/api/change", user.RegistrationUser())
+	apiMux.Handle("/api/user", middleware.Permission("user", user.GetUser()))
+	apiMux.Handle("/api/change", middleware.Permission("admin_full", user.RegistrationUser()))
 	// работа с игрой
 	apiMux.Handle("/api/game/new", game.CreateSession())
 	apiMux.Handle("/api/game/sessions", middleware.Permission("user", game.GetSessions()))
 	apiMux.Handle("/api/game/guess", middleware.Permission("user", game.Guess()))
+	apiMux.Handle("/api/game/history", middleware.Permission("user", game.History()))
+	apiMux.Handle("/api/game/leaderboard", middleware.Permission("user", game.Leaderboard()))
 
 	logger := log.New(os.Stdout, "[connect] ", log.Flags())
-	api := middleware.JSONWrite(middleware.CORS("", apiMux))
+	api := middleware.CORS("POST, GET", middleware.JSONWrite(apiMux))
 	webServer := &http.Server{
 		Addr:           base.GetConfig().Port,
 		Handler:        middleware.Logging(logger)(api),

@@ -2,7 +2,9 @@ package game
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/Lasiar/au-back/model/game"
 
@@ -26,16 +28,22 @@ func CreateSession() http.Handler {
 			context.SetResponse(r, err)
 			return
 		}
-		if err := game.GetGame().CreateSession(user.ID, resp.Length); err != nil {
+		session, err := game.GetGame().CreateSession(user.ID, resp.Length)
+		if err != nil {
 			context.SetError(r, err)
 			return
 		}
-		context.SetResponse(r, struct{}{})
+		context.SetResponse(r, session)
 	})
 }
 
 func GetSessions() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		completed, err := strconv.ParseBool(r.URL.Query()["completed"][0])
+		if err != nil {
+			context.SetError(r, err)
+			return
+		}
 		token, err := web.GetToken(r)
 		if err != nil {
 			context.SetError(r, err)
@@ -46,25 +54,34 @@ func GetSessions() http.HandlerFunc {
 			context.SetError(r, err)
 			return
 		}
-		sessions, err := game.GetGame().GetSessions(user.ID)
+		sessions, err := game.GetGame().GetSessions(user.ID, completed)
+		if err != nil {
+			context.SetError(r, err)
+			return
+		}
 		context.SetResponse(r, sessions)
 	})
 }
 
 func Guess() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		req := struct {
-			IDSession int    `json:"id_session"`
-			Guess     string `json:"guess"`
-		}{}
 		user, err := web.GetUser(r)
 		if err != nil {
 			context.SetError(r, err)
 			return
 		}
-		err = web.ParseJSON(r, &req)
+
+		req := &struct {
+			IDSession int    `json:"id_session"`
+			Text      string `json:"text"`
+		}{}
+		err = web.ParseJSON(r, req)
 		if err != nil {
-			context.SetError(r, err)
+			context.SetError(r, fmt.Errorf("%v: %v", web.ErrBadRequest, err))
+			return
+		}
+		if req.Text == "" || req.IDSession < 1 {
+			context.SetError(r, fmt.Errorf("%v: %v", web.ErrBadRequest, "text or id_session wrong"))
 			return
 		}
 		session, err := game.GetGame().GetSession(req.IDSession)
@@ -77,15 +94,46 @@ func Guess() http.HandlerFunc {
 			context.SetError(r, errors.New("not forbidden"))
 			return
 		}
-		respText, isValid, err := game.GetGame().Guess(req.IDSession, req.Guess)
+		lap, isValid, err := game.GetGame().Guess(req.IDSession, req.Text)
 		if err != nil {
 			context.SetError(r, err)
 			return
 		}
 		resp := struct {
-			Text    string `json:"text"`
-			IsValid bool   `json:"is_valid"`
-		}{Text: respText, IsValid: isValid}
+			*game.Lap
+			IsValid bool `json:"is_valid"`
+		}{Lap: lap, IsValid: isValid}
 		context.SetResponse(r, resp)
+	})
+}
+
+func History() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		req := struct {
+			IDSession int `json:"id_session"`
+		}{}
+		err := web.ParseJSON(r, &req)
+		if err != nil {
+			context.SetError(r, err)
+			return
+		}
+		laps, err := game.GetGame().GetLapsSorted(req.IDSession)
+		if err != nil {
+			context.SetError(r, err)
+			return
+		}
+
+		context.SetResponse(r, laps)
+	})
+}
+
+func Leaderboard() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		leaderboards, err := game.GetGame().GetLeaderboards()
+		if err != nil {
+			context.SetError(r, err)
+			return
+		}
+		context.SetResponse(r, leaderboards)
 	})
 }

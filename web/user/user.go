@@ -148,11 +148,11 @@ func RegistrationUser() http.Handler {
 // Login авторизирует пользователя
 func Login() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		req := struct {
+		req := &struct {
 			Login string `json:"login"`
 			Pass  string `json:"password"`
 		}{}
-		if err := web.ParseJSON(r, &req); err != nil {
+		if err := web.ParseJSON(r, req); err != nil {
 			context.SetError(r, err)
 			return
 		}
@@ -177,19 +177,15 @@ func GetPermissions() http.Handler {
 			Level    int    `json:"level"`
 			CodeName string `json:"code_name"`
 		}
-
 		perms, err := auth.GetAuth().GetPermissions()
 		if err != nil {
 			context.SetError(r, err)
 			return
 		}
-
 		var resp []permission
-
 		for _, p := range perms {
 			resp = append(resp, permission{Level: p.ID, CodeName: p.Code})
 		}
-
 		context.SetResponse(r, resp)
 	})
 }
