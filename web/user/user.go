@@ -17,7 +17,7 @@ type FullUser struct {
 	ID       int    `json:"id"`
 	Login    string `json:"login"`
 	Name     string `json:"name"`
-	PermID   int    `json:"perm_id"`
+	PermID   int    `json:"perm_mask"`
 	HashPass string `json:"hash_pass"`
 	Pass     string `json:"password"`
 }
@@ -46,6 +46,7 @@ func (u *FullUser) Load(user *auth.User) *FullUser {
 	u.ID = user.ID
 	u.Login = user.Login
 	u.HashPass = user.Pass
+	u.PermID = user.PermID
 	if user.Name.Valid {
 		u.Name = user.Name.String
 	}
@@ -58,6 +59,7 @@ func (u *FullUser) Upload() (*auth.User, error) {
 	user.ID = u.ID
 	user.Login = u.Login
 	user.Pass = u.HashPass
+	user.PermID = u.PermID
 	if len(u.Pass) > 0 {
 		pass, err := bcrypt.GenerateFromPassword([]byte(u.Pass), bcrypt.MinCost)
 		if err != nil {
@@ -82,11 +84,6 @@ func SetUser() http.Handler {
 		}
 		user, err := dr.Upload()
 		if err != nil {
-			context.SetError(r, err)
-			return
-		}
-		if len(user.Pass) < 1 {
-			err := fmt.Errorf("пустой пароль")
 			context.SetError(r, err)
 			return
 		}

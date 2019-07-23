@@ -75,9 +75,8 @@ func (db *database) insertUser(user *User) (int, error) {
 
 // updateUser обновляет данные пользователя
 func (db *database) updateUser(user *User) error {
-	_, err := db.db.Exec(`UPDATE auth.users SET login = $1, pass = $2, name = $3, id_permission=$4 WHERE id = $5`,
+	_, err := db.db.Exec(`UPDATE auth.users SET login = $1,  name = $2, id_permission=$3 WHERE id = $4`,
 		user.Login,
-		user.Pass,
 		user.Name,
 		user.PermID,
 		user.ID,

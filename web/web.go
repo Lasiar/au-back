@@ -20,11 +20,11 @@ func Run() {
 	apiMux.Handle("/api/user/registration", user.RegistrationUser())
 	apiMux.Handle("/api/user/permissions", user.GetPermissions())
 	apiMux.Handle("/api/user/logout", user.Logout())
+	apiMux.Handle("/api/user/set", middleware.Permission("admin_full", user.SetUser()))
 	apiMux.Handle("/api/users", middleware.Permission("admin_full", user.GetUsers()))
 	apiMux.Handle("/api/user", middleware.Permission("user", user.GetUser()))
-	apiMux.Handle("/api/change", middleware.Permission("admin_full", user.RegistrationUser()))
 	// работа с игрой
-	apiMux.Handle("/api/game/new", game.CreateSession())
+	apiMux.Handle("/api/game/new", middleware.Permission("user", game.CreateSession()))
 	apiMux.Handle("/api/game/sessions", middleware.Permission("user", game.GetSessions()))
 	apiMux.Handle("/api/game/guess", middleware.Permission("user", game.Guess()))
 	apiMux.Handle("/api/game/history", middleware.Permission("user", game.History()))
