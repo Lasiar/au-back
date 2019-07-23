@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/Lasiar/au-back/model/auth"
@@ -37,7 +38,6 @@ func GetUser(r *http.Request) (*auth.User, error) {
 		return nil, err
 	}
 	*r = *r.WithContext(context.WithValue(r.Context(), "user", user))
-	*r = *r.WithContext(context.WithValue(r.Context(), "user", user))
 	return user, nil
 }
 
@@ -55,7 +55,11 @@ func HasPerm(r *http.Request, code string) (bool, error) {
 
 // ParseJSON читает из тела запроса переданную структуру
 func ParseJSON(r *http.Request, data interface{}) error {
-	return json.NewDecoder(r.Body).Decode(data)
+	err := json.NewDecoder(r.Body).Decode(data)
+	if err != nil {
+		return fmt.Errorf("%v: %v", ErrBadRequest, err)
+	}
+	return nil
 }
 
 // SetToken устанавливает токен в веб запрос

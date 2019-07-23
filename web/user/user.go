@@ -88,7 +88,7 @@ func SetUser() http.Handler {
 			return
 		}
 		if len(user.Login) < 1 {
-			err := fmt.Errorf("пустой логин")
+			context.SetError(r, fmt.Errorf("%v:%v", web.ErrBadRequest, "empty login"))
 			context.SetError(r, err)
 			return
 		}
@@ -102,7 +102,6 @@ func GetUser() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, err := web.GetToken(r)
 		if err != nil {
-			// todo: union error
 			context.SetError(r, err)
 			return
 		}
@@ -128,13 +127,11 @@ func RegistrationUser() http.Handler {
 			return
 		}
 		if len(user.Pass) < 1 {
-			err := fmt.Errorf("пустой пароль")
-			context.SetError(r, err)
+			context.SetError(r, fmt.Errorf("%v:%v", web.ErrBadRequest, "empty password"))
 			return
 		}
 		if len(user.Login) < 1 {
-			err := fmt.Errorf("пустой логин")
-			context.SetError(r, err)
+			context.SetError(r, fmt.Errorf("%v:%v", web.ErrBadRequest, "empty login"))
 			return
 		}
 		id, err := auth.GetAuth().AddUser(user)

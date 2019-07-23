@@ -3,7 +3,6 @@ package middleware
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -25,6 +24,10 @@ func JSONWrite(next http.Handler) http.Handler {
 			switch {
 			case web.IsBadRequest(err):
 				http.Error(w, err.Error(), http.StatusBadRequest)
+			case web.IsUnauthorized(err):
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+			case web.IsNotForbidden(err):
+				http.Error(w, err.Error(), http.StatusForbidden)
 			case err == sql.ErrNoRows:
 				http.Error(w, "Нет данных по данному запросы", http.StatusNotFound)
 			default:
@@ -65,7 +68,7 @@ func CORS(method string, next http.Handler) http.Handler {
 func Permission(permName string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if ok, err := web.HasPerm(r, permName); err != nil || !ok {
-			context.SetError(r, errors.New("forbidden"))
+			context.SetError(r, web.ErrNotForbidden)
 			return
 		}
 

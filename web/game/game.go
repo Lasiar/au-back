@@ -8,7 +8,6 @@ import (
 
 	"github.com/Lasiar/au-back/model/game"
 
-	"github.com/Lasiar/au-back/model/auth"
 	web "github.com/Lasiar/au-back/web/base"
 	"github.com/Lasiar/au-back/web/context"
 )
@@ -21,6 +20,10 @@ func CreateSession() http.Handler {
 		err := web.ParseJSON(r, &resp)
 		if err != nil {
 			context.SetError(r, err)
+			return
+		}
+		if resp.Length == 0 {
+			context.SetError(r, fmt.Errorf("%v:%v", web.ErrBadRequest, "not allow session with zero length secret"))
 			return
 		}
 		user, err := web.GetUser(r)
@@ -44,12 +47,7 @@ func GetSessions() http.HandlerFunc {
 			context.SetError(r, err)
 			return
 		}
-		token, err := web.GetToken(r)
-		if err != nil {
-			context.SetError(r, err)
-			return
-		}
-		user, _, err := auth.GetAuth().GetSession(token)
+		user, err := web.GetUser(r)
 		if err != nil {
 			context.SetError(r, err)
 			return
@@ -129,11 +127,11 @@ func History() http.Handler {
 
 func Leaderboard() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		leaderboards, err := game.GetGame().GetLeaderboards()
+		leaderBoards, err := game.GetGame().GetLeaderBoards()
 		if err != nil {
 			context.SetError(r, err)
 			return
 		}
-		context.SetResponse(r, leaderboards)
+		context.SetResponse(r, leaderBoards)
 	})
 }

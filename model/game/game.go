@@ -71,6 +71,6 @@ func (g *Game) GetSession(id int) (*Session, error) {
 	return g.db.selectSessionByID(id)
 }
 
-func (g *Game) GetLeaderboards() ([]*Leaderboard, error) {
-	return g.db.selectLeaderboard()
+func (g *Game) GetLeaderBoards() ([]*LeaderBoard, error) {
+	return g.db.selectLeaderBoard()
 }
