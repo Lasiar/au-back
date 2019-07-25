@@ -35,3 +35,18 @@ AS SELECT s.id,
    FROM game.sessions s
      LEFT JOIN game.lap lap ON s.id = lap.id_session
   GROUP BY s.id, s.id_user, s.secret;
+
+-- создание представляния для отображеения инфомрации о отыгрынных игр
+CREATE OR REPLACE VIEW game.v_sessions_completed
+SELECT s.id,
+       s.secret,
+       s.id_user,
+       EXTRACT(epoch
+               FROM age(max(dt)::TIMESTAMP, min(dt)::TIMESTAMP))/3600 AS diff,
+       count(lap.*)
+FROM v_sessions_completed s
+INNER JOIN lap ON s.id = lap.id_session
+WHERE completed = TRUE
+GROUP BY s.id,
+         s.secret,
+         s.id_user
