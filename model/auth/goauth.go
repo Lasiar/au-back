@@ -1,16 +1,16 @@
 package auth
 
 import (
-	"fmt"
+	"errors"
 	"sync"
 )
 
 // создание переменных для ошибок
 var (
-	errWrongPassword         = fmt.Errorf("wrong username or password")
-	errAuthForbidden         = fmt.Errorf("authorization is forbidden")
-	errSessionIsNotCompleted = fmt.Errorf("session is not completed")
-	errSession               = fmt.Errorf("session error")
+	errWrongPassword         = errors.New("wrong username or password")
+	errAuthForbidden         = errors.New("authorization is forbidden")
+	errSessionIsNotCompleted = errors.New("session is not completed")
+	errSession               = errors.New("session error")
 )
 
 // IsWrongPassword возврашает истину если ошибка это неверный логин пароль

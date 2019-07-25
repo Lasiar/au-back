@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Lasiar/au-back/model/auth"
+
 	web "github.com/Lasiar/au-back/web/base"
 	"github.com/Lasiar/au-back/web/context"
 )
@@ -28,6 +30,8 @@ func JSONWrite(next http.Handler) http.Handler {
 				http.Error(w, err.Error(), http.StatusUnauthorized)
 			case web.IsNotForbidden(err):
 				http.Error(w, err.Error(), http.StatusForbidden)
+			case auth.IsWrongPassword(err):
+				http.Error(w, err.Error(), http.StatusBadRequest)
 			case err == sql.ErrNoRows:
 				http.Error(w, "Нет данных по данному запросы", http.StatusNotFound)
 			default:

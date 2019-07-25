@@ -3,7 +3,7 @@ package user
 import (
 	"fmt"
 	"net/http"
-	"seismo_journal/web/base"
+	"strings"
 
 	"github.com/Lasiar/au-back/model/auth"
 	web "github.com/Lasiar/au-back/web/base"
@@ -87,12 +87,15 @@ func SetUser() http.Handler {
 			context.SetError(r, err)
 			return
 		}
-		if len(user.Login) < 1 {
+		if user.Login == "" {
 			context.SetError(r, fmt.Errorf("%v:%v", web.ErrBadRequest, "empty login"))
-			context.SetError(r, err)
 			return
 		}
 		id, err := auth.GetAuth().ChangeUser(user)
+		if err != nil && strings.Contains(err.Error(), "users_id_permission_fkey") {
+			context.SetError(r, fmt.Errorf("%v: %v", web.ErrBadRequest, "perm mask does not exist`"))
+			return
+		}
 		context.SetErrorOrResponse(r, id, err)
 	})
 }
@@ -116,7 +119,10 @@ func GetUser() http.Handler {
 // SetUser устанавливает параметры пользователя
 func RegistrationUser() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		dr := &FullUser{}
+		dr := struct {
+			FullUser
+			Captcha string `json:"captcha"`
+		}{}
 		if err := web.ParseJSON(r, &dr); err != nil {
 			context.SetError(r, err)
 			return
@@ -126,15 +132,15 @@ func RegistrationUser() http.Handler {
 			context.SetError(r, err)
 			return
 		}
-		if len(user.Pass) < 1 {
-			context.SetError(r, fmt.Errorf("%v:%v", web.ErrBadRequest, "empty password"))
-			return
-		}
-		if len(user.Login) < 1 {
-			context.SetError(r, fmt.Errorf("%v:%v", web.ErrBadRequest, "empty login"))
+		if user.Pass == "" || user.Login == "" {
+			context.SetError(r, fmt.Errorf("%v:%v", web.ErrBadRequest, "empty login or password"))
 			return
 		}
 		id, err := auth.GetAuth().AddUser(user)
+		if err != nil && strings.Contains(err.Error(), "users_login_key") {
+			context.SetError(r, fmt.Errorf("%v: %v", web.ErrBadRequest, "Такой ник уже занят"))
+			return
+		}
 		context.SetErrorOrResponse(r, id, err)
 	})
 }
@@ -148,6 +154,10 @@ func Login() http.Handler {
 		}{}
 		if err := web.ParseJSON(r, req); err != nil {
 			context.SetError(r, err)
+			return
+		}
+		if req.Pass == "" || req.Login == "" {
+			context.SetError(r, fmt.Errorf("%v:%v", web.ErrBadRequest, "empty login"))
 			return
 		}
 		if token, err := web.GetToken(r); err == nil && token != "" {
@@ -201,7 +211,7 @@ func GetUsers() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		dUsers, err := auth.GetAuth().GetUsers()
 		if err != nil {
-			base.SetError(r, err)
+			context.SetError(r, err)
 			return
 		}
 		users := make([]*User, 0)
